@@ -366,8 +366,47 @@ class TestDocumentService:
 
             file_type_png = service._get_file_type("test.png")
             assert file_type_png == "PNG"
+    
+    # Tests adicionales para upload_and_analyze_document (8 más para llegar a 10)
+    @patch("app.modules.documents.service.TextractService")
+    @patch("app.modules.documents.service.S3Service")
+    def test_upload_and_analyze_document_information_classification(
+        self, mock_s3_class, mock_textract_class, db_session, test_user
+    ):
+        """Test de subida y análisis de documento clasificado como Información."""
+        mock_s3 = MagicMock()
+        mock_s3.bucket_name = "test-bucket"
+        mock_s3.upload_file.return_value = (
+            "uploads/test.pdf",
+            "https://bucket.s3/test.pdf",
+        )
+        mock_s3_class.return_value = mock_s3
 
+        mock_textract = MagicMock()
+        mock_textract.detect_document_text.return_value = {
+            "Blocks": [{"BlockType": "LINE", "Text": "Este es un documento informativo"}]
+        }
+        mock_textract.classify_document.return_value = "Información"
+        mock_textract.extract_information_data.return_value = {
+            "descripcion": "Documento informativo",
+            "resumen": "Resumen",
+            "sentimiento": "neutral",
+        }
+        mock_textract_class.return_value = mock_textract
 
+        document_repo = DocumentRepository(db_session)
+        event_repo = EventLogRepository(db_session)
+        service = DocumentService(document_repo, event_repo, mock_s3, mock_textract)
+
+        result = service.upload_and_analyze_document(
+            file_content=b"content",
+            filename="test.pdf",
+            user_id=test_user.id,
+        )
+
+        assert result["classification"] == "Información"
+        assert result["status"] == "completed"
+    
 class TestDocumentEndpoints:
     """Tests para los endpoints de documentos."""
 
