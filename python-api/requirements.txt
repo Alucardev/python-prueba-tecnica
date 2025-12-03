@@ -1,0 +1,30 @@
+# Framework web
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Base de datos
+sqlalchemy==2.0.23
+pyodbc==5.0.1
+
+# Autenticación JWT
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# AWS SDK
+boto3==1.29.7
+
+# Validación de datos
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Utilidades
+python-multipart==0.0.6
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+pytest-cov==4.1.0
+faker==20.1.0
+moto==4.2.14  # Para mockear AWS S3
+
