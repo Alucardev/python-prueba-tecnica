@@ -8,6 +8,12 @@ from app.exceptions.custom_exceptions import ExternalServiceError
 from app.modules.documents.repository import DocumentRepository, EventLogRepository
 from app.shared.s3_service import S3Service
 from app.shared.textract_service import TextractService
+from app.shared.constants import (
+    DocumentClassification,
+    DocumentStatus,
+    EventType,
+    FileType,
+)
 
 
 class DocumentService:
@@ -72,13 +78,13 @@ class DocumentService:
             s3_key=s3_key,
             s3_url=s3_url,
             user_id=user_id,
-            classification="processing",  # Temporal hasta que se analice
-            status="processing",
+            classification=DocumentClassification.PROCESSING.value,
+            status=DocumentStatus.PROCESSING.value,
         )
 
         # Registrar evento
         self.event_repository.create_event(
-            event_type="document_upload",
+            event_type=EventType.DOCUMENT_UPLOAD.value,
             description=f"Documento {filename} subido",
             user_id=user_id,
             document_id=document.id,
@@ -99,28 +105,21 @@ class DocumentService:
             classification = self.textract_service.classify_document(text_content)
 
             # Extraer datos según la clasificación
-            extracted_data = {}
-            if classification == "Factura":
-                # Usar analyze_document para obtener más detalles
-                analyze_response = self.textract_service.analyze_document(
-                    s3_bucket=self.s3_service.bucket_name,
-                    s3_key=s3_key,
-                )
-                extracted_data = self.textract_service.extract_invoice_data(analyze_response)
-            else:
-                extracted_data = self.textract_service.extract_information_data(text_content)
+            extracted_data = self._extract_data_by_classification(
+                classification, text_content, s3_key
+            )
 
             # Actualizar documento con resultados
             document = self.document_repository.update_document_analysis(
                 document_id=document.id,
                 classification=classification,
-                status="completed",
+                status=DocumentStatus.COMPLETED.value,
                 extracted_data=extracted_data,
             )
 
             # Registrar evento de análisis
             self.event_repository.create_event(
-                event_type="ai_analysis",
+                event_type=EventType.AI_ANALYSIS.value,
                 description=f"Análisis completado: {classification}",
                 user_id=user_id,
                 document_id=document.id,
@@ -131,7 +130,7 @@ class DocumentService:
             # Actualizar estado a error
             self.document_repository.update_document_analysis(
                 document_id=document.id,
-                status="error",
+                status=DocumentStatus.ERROR.value,
             )
             raise ExternalServiceError(
                 f"Error al analizar documento: {str(e)}", service="AWS Textract"
@@ -151,26 +150,53 @@ class DocumentService:
     def _get_file_type(self, filename: str) -> str:
         """Determina el tipo de archivo basándose en la extensión."""
         extension = filename.split(".")[-1].upper()
-        if extension in ["PDF"]:
-            return "PDF"
-        elif extension in ["JPG", "JPEG"]:
-            return "JPG"
-        elif extension == "PNG":
-            return "PNG"
-        return "UNKNOWN"
+        
+        extension_map = {
+            "PDF": FileType.PDF.value,
+            "JPG": FileType.JPG.value,
+            "JPEG": FileType.JPG.value,
+            "PNG": FileType.PNG.value,
+        }
+        
+        return extension_map.get(extension, FileType.UNKNOWN.value)
 
     def _extract_text_from_textract_response(self, response: Dict[str, Any]) -> str:
         """Extrae texto completo de la respuesta de Textract."""
         blocks = response.get("Blocks", [])
-        text_blocks = [
-            block.get("Text", "") for block in blocks if block.get("BlockType") == "LINE"
-        ]
-        return " ".join(text_blocks)
+        return self._extract_text_from_blocks(blocks)
     
     def _extract_text_from_blocks(self, blocks: list) -> str:
         """Extrae texto de los bloques de Textract."""
-        text_blocks = [block.get("Text", "") for block in blocks if block.get("BlockType") == "LINE"]
+        text_blocks = [
+            block.get("Text", "") 
+            for block in blocks 
+            if block.get("BlockType") == "LINE"
+        ]
         return " ".join(text_blocks)
+    
+    def _extract_data_by_classification(
+        self, classification: str, text_content: str, s3_key: str
+    ) -> Dict[str, Any]:
+        """
+        Extrae datos del documento según su clasificación.
+        
+        Args:
+            classification: Clasificación del documento
+            text_content: Contenido de texto extraído
+            s3_key: Clave del archivo en S3
+            
+        Returns:
+            Diccionario con datos extraídos
+        """
+        if classification == DocumentClassification.FACTURA.value:
+            # Usar analyze_document para obtener más detalles
+            analyze_response = self.textract_service.analyze_document(
+                s3_bucket=self.s3_service.bucket_name,
+                s3_key=s3_key,
+            )
+            return self.textract_service.extract_invoice_data(analyze_response)
+        else:
+            return self.textract_service.extract_information_data(text_content)
 
 
 __all__ = ["DocumentService"]

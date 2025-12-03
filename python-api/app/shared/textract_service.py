@@ -8,6 +8,14 @@ from botocore.exceptions import ClientError
 
 from app.config import settings
 from app.exceptions.custom_exceptions import ExternalServiceError
+from app.shared.constants import (
+    DocumentClassification,
+    INVOICE_KEYWORDS,
+    INVOICE_KEYWORD_THRESHOLD,
+    POSITIVE_WORDS,
+    NEGATIVE_WORDS,
+    SUMMARY_MAX_LENGTH,
+)
 
 
 class TextractService:
@@ -83,34 +91,13 @@ class TextractService:
         """
         text_lower = text_content.lower()
 
-        # Palabras clave que indican que es una factura
-        invoice_keywords = [
-            "factura",
-            "invoice",
-            "total",
-            "subtotal",
-            "iva",
-            "impuesto",
-            "cliente",
-            "proveedor",
-            "supplier",
-            "customer",
-            "producto",
-            "cantidad",
-            "precio",
-            "número de factura",
-            "invoice number",
-            "fecha de emisión",
-            "fecha de vencimiento",
-        ]
+        # Contar coincidencias con palabras clave de factura
+        matches = sum(1 for keyword in INVOICE_KEYWORDS if keyword in text_lower)
 
-        # Contar coincidencias
-        matches = sum(1 for keyword in invoice_keywords if keyword in text_lower)
-
-        # Si hay al menos 3 coincidencias, es probable que sea una factura
-        if matches >= 3:
-            return "Factura"
-        return "Información"
+        # Si hay suficientes coincidencias, es probable que sea una factura
+        if matches >= INVOICE_KEYWORD_THRESHOLD:
+            return DocumentClassification.FACTURA.value
+        return DocumentClassification.INFORMACION.value
 
     def extract_invoice_data(self, textract_response: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -157,8 +144,12 @@ class TextractService:
         # Análisis simple de sentimiento
         sentiment = self._analyze_sentiment(text_content)
 
-        # Generar resumen (primeros 200 caracteres)
-        summary = text_content[:200] + "..." if len(text_content) > 200 else text_content
+        # Generar resumen (primeros N caracteres)
+        summary = (
+            text_content[:SUMMARY_MAX_LENGTH] + "..."
+            if len(text_content) > SUMMARY_MAX_LENGTH
+            else text_content
+        )
 
         return {
             "descripcion": summary,
@@ -262,32 +253,8 @@ class TextractService:
         """
         text_lower = text.lower()
 
-        # Palabras positivas
-        positive_words = [
-            "bueno",
-            "excelente",
-            "perfecto",
-            "gracias",
-            "aprobado",
-            "éxito",
-            "feliz",
-            "satisfecho",
-        ]
-
-        # Palabras negativas
-        negative_words = [
-            "malo",
-            "error",
-            "problema",
-            "rechazado",
-            "fallo",
-            "triste",
-            "insatisfecho",
-            "queja",
-        ]
-
-        positive_count = sum(1 for word in positive_words if word in text_lower)
-        negative_count = sum(1 for word in negative_words if word in text_lower)
+        positive_count = sum(1 for word in POSITIVE_WORDS if word in text_lower)
+        negative_count = sum(1 for word in NEGATIVE_WORDS if word in text_lower)
 
         if positive_count > negative_count:
             return "positivo"

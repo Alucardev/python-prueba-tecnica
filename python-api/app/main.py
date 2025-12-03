@@ -20,10 +20,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Registrar middleware de manejo de errores (debe ir antes de otros middlewares)
-app.middleware("http")(error_handler_middleware)
-
-
+# Registrar exception handler ANTES del middleware
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """
@@ -49,6 +46,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "details": errors,
         },
     )
+
+# Registrar middleware de manejo de errores (debe ir después de exception handlers)
+app.middleware("http")(error_handler_middleware)
 
 # Configurar CORS (permitir solicitudes desde cualquier origen)
 app.add_middleware(
