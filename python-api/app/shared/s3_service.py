@@ -46,11 +46,21 @@ class S3Service:
         """
 
         # Generar una clave única para el archivo en S3
-        # Formato: uploads/YYYY/MM/DD/uuid-nombre_original.csv
+        # Formato: uploads/YYYY/MM/DD/uuid-nombre_original
         date_prefix = datetime.utcnow().strftime("%Y/%m/%d")
         unique_id = str(uuid.uuid4())
-        file_extension = filename.split(".")[-1] if "." in filename else "csv"
+        file_extension = filename.split(".")[-1] if "." in filename else ""
         s3_key = f"uploads/{date_prefix}/{unique_id}-{filename}"
+
+        # Determinar ContentType según extensión
+        content_type_map = {
+            "pdf": "application/pdf",
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "png": "image/png",
+            "csv": "text/csv",
+        }
+        content_type = content_type_map.get(file_extension.lower(), "application/octet-stream")
 
         try:
             # Preparar metadata para S3
@@ -65,7 +75,7 @@ class S3Service:
                 Bucket=self.bucket_name,
                 Key=s3_key,
                 Body=file_content,
-                ContentType="text/csv",
+                ContentType=content_type,
                 Metadata=metadata,
             )
 

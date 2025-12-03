@@ -19,6 +19,7 @@ pydantic-settings==2.1.0
 
 # Utilidades
 python-multipart==0.0.6
+openpyxl==3.1.2
 
 # Testing
 pytest==7.4.3

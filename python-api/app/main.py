@@ -11,6 +11,7 @@ from app.database import init_db
 from app.middleware.error_handler import error_handler_middleware
 from app.modules.auth.router import router as auth_router
 from app.modules.csv.router import router as csv_router
+from app.modules.documents.router import router as documents_router
 
 # Crear la aplicación FastAPI
 app = FastAPI(
@@ -71,6 +72,7 @@ async def startup_event():
 # Incluir los routers de los módulos
 app.include_router(auth_router)
 app.include_router(csv_router)
+app.include_router(documents_router)
 
 
 @app.get("/", tags=["Raíz"])
@@ -86,7 +88,8 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "auth": "/auth/login, /auth/refresh",
-            "files": "/files/upload"
+            "files": "/files/upload",
+            "documents": "/documents/upload, /documents/, /documents/events/history"
         }
     }
 

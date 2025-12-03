@@ -26,6 +26,7 @@ def init_db():
     # Importar todos los modelos para que SQLAlchemy los registre
     from app.modules.auth import models as auth_models  # noqa: F401
     from app.modules.csv import models as csv_models  # noqa: F401
+    from app.modules.documents import models as documents_models  # noqa: F401
     
     # Crear todas las tablas usando la Base compartida
     Base.metadata.create_all(bind=engine)
