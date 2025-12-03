@@ -4,12 +4,13 @@ Tests para los endpoints de autenticación.
 import pytest
 from fastapi import status
 from app.modules.auth.repository import UserRepository
+from app.modules.documents.repository import EventLogRepository
 
 
 class TestLogin:
     """Tests para el endpoint de login."""
     
-    def test_login_success(self, client, test_user):
+    def test_login_success(self, client, test_user, db_session):
         """Test de login exitoso."""
         response = client.post(
             "/auth/login",
@@ -22,6 +23,14 @@ class TestLogin:
         assert data["token_type"] == "bearer"
         assert data["expires_in"] == 900  # 15 minutos en segundos
         assert len(data["access_token"]) > 0
+        
+        # Verificar que se creó un evento de login
+        event_repo = EventLogRepository(db_session)
+        events = event_repo.get_events(event_type="user_login", user_id=test_user.id)
+        assert len(events) > 0
+        assert events[0].event_type == "user_login"
+        assert events[0].user_id == test_user.id
+        assert "testuser" in events[0].description
     
     def test_login_invalid_username(self, client):
         """Test de login con usuario inexistente."""

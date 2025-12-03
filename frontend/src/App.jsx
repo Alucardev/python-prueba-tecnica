@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import DocumentUpload from './components/DocumentUpload'
+import EventHistory from './components/EventHistory'
 import Login from './components/Login'
 import './App.css'
 
@@ -8,6 +9,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001'
 function App() {
   const [authToken, setAuthToken] = useState(localStorage.getItem('authToken'))
   const [currentUser, setCurrentUser] = useState(null)
+  const [activeTab, setActiveTab] = useState('upload')
 
   useEffect(() => {
     if (authToken) {
@@ -64,10 +66,39 @@ function App() {
           </div>
         </header>
 
-        {/* Content */}
+        {/* Tabs Navigation */}
         <div className="bg-white rounded-lg shadow-sm mb-6">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('upload')}
+              className={`px-6 py-3 font-medium text-sm transition-colors ${
+                activeTab === 'upload'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+              }`}
+            >
+              Subir Documento
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-6 py-3 font-medium text-sm transition-colors ${
+                activeTab === 'history'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+              }`}
+            >
+              Historial de Eventos
+            </button>
+          </div>
+
+          {/* Tab Content */}
           <div className="p-6">
-            <DocumentUpload apiUrl={API_URL} authToken={authToken} />
+            {activeTab === 'upload' && (
+              <DocumentUpload apiUrl={API_URL} authToken={authToken} />
+            )}
+            {activeTab === 'history' && (
+              <EventHistory apiUrl={API_URL} authToken={authToken} />
+            )}
           </div>
         </div>
       </div>

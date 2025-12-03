@@ -2,6 +2,7 @@
 Router de Autenticación.
 Define los endpoints relacionados con autenticación y tokens JWT.
 """
+from datetime import datetime
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,7 @@ from app.modules.auth.schemas import (
     TokenRefreshResponse,
 )
 from app.modules.auth.service import AuthService
+from app.modules.documents.repository import EventLogRepository
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -51,6 +53,27 @@ async def login(
     
     # Crear token JWT
     access_token = auth_service.create_access_token(user)
+    
+    # Registrar evento de login
+    try:
+        event_repository = EventLogRepository(db)
+        event_repository.create_event(
+            event_type="user_login",
+            description=f"Usuario {login_data.username} inició sesión",
+            user_id=user.id,
+            metadata={
+                "username": login_data.username,
+                "login_timestamp": datetime.utcnow().isoformat(),
+            }
+        )
+        # create_event ya hace commit internamente, no necesitamos otro commit
+    except Exception as e:
+        # Si falla el registro del evento, no interrumpir el login
+        # En producción usar un logger para registrar el error
+        import traceback
+        print(f"Error al registrar evento de login: {str(e)}")
+        traceback.print_exc()
+        # No hacer rollback aquí porque create_event ya maneja su propia transacción
     
     # Calcular tiempo de expiración en segundos
     expires_in = settings.JWT_EXPIRATION_MINUTES * 60

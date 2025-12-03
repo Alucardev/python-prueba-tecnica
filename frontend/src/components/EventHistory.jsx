@@ -13,7 +13,17 @@ function EventHistory({ apiUrl, authToken }) {
 
   useEffect(() => {
     loadEvents()
-  }, [])
+  }, []) // Solo cargar al montar el componente
+
+  // Función para formatear el tipo de evento de forma más legible
+  const formatEventType = (eventType) => {
+    const typeMap = {
+      'user_login': 'Interacción del Usuario',
+      'document_upload': 'Carga de Documento',
+      'ai_analysis': 'Análisis con IA',
+    }
+    return typeMap[eventType] || eventType
+  }
 
   const loadEvents = async () => {
     setLoading(true)
@@ -95,57 +105,86 @@ function EventHistory({ apiUrl, authToken }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-1">Historial de Eventos</h2>
-          <p className="text-sm text-gray-600">Registro de actividades del sistema</p>
+          <p className="text-sm text-gray-600">Registro completo de actividades del sistema</p>
         </div>
         <button
           onClick={handleExport}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm text-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm text-sm flex items-center gap-2"
         >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
           Exportar a Excel
         </button>
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <input
-          type="text"
-          placeholder="Tipo de evento"
-          value={filters.event_type}
-          onChange={(e) => handleFilterChange('event_type', e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-        />
-        <input
-          type="text"
-          placeholder="Buscar en descripción"
-          value={filters.description}
-          onChange={(e) => handleFilterChange('description', e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-        />
-        <input
-          type="date"
-          placeholder="Fecha inicio"
-          value={filters.start_date}
-          onChange={(e) => handleFilterChange('start_date', e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-        />
-        <input
-          type="date"
-          placeholder="Fecha fin"
-          value={filters.end_date}
-          onChange={(e) => handleFilterChange('end_date', e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-        />
+      <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Filtros de Búsqueda</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Tipo de Evento</label>
+            <select
+              value={filters.event_type}
+              onChange={(e) => handleFilterChange('event_type', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm bg-white"
+            >
+              <option value="">Todos los tipos</option>
+              <option value="user_login">Interacción del Usuario (Login)</option>
+              <option value="document_upload">Carga de Documento</option>
+              <option value="ai_analysis">Análisis con IA</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Buscar en Descripción</label>
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={filters.description}
+              onChange={(e) => handleFilterChange('description', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm bg-white"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Fecha Inicio</label>
+            <input
+              type="date"
+              value={filters.start_date}
+              onChange={(e) => handleFilterChange('start_date', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm bg-white"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Fecha Fin</label>
+            <input
+              type="date"
+              value={filters.end_date}
+              onChange={(e) => handleFilterChange('end_date', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm bg-white"
+            />
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={loadEvents}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md font-medium transition-colors shadow-sm text-sm"
+          >
+            Aplicar Filtros
+          </button>
+          <button
+            onClick={() => {
+              setFilters({ event_type: '', description: '', start_date: '', end_date: '' })
+              setTimeout(loadEvents, 100)
+            }}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-md font-medium transition-colors text-sm"
+          >
+            Limpiar
+          </button>
+        </div>
       </div>
-
-      <button
-        onClick={loadEvents}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md font-medium transition-colors shadow-sm text-sm"
-      >
-        Filtrar
-      </button>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
@@ -155,9 +194,17 @@ function EventHistory({ apiUrl, authToken }) {
 
       {events.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-md border border-gray-200">
-          <p className="text-gray-600">No hay eventos disponibles</p>
+          <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <p className="text-gray-600 font-medium">No hay eventos disponibles</p>
+          <p className="text-sm text-gray-500 mt-1">Intenta ajustar los filtros de búsqueda</p>
         </div>
       ) : (
+        <>
+          <div className="mb-4 text-sm text-gray-600">
+            Mostrando {events.length} evento{events.length !== 1 ? 's' : ''}
+          </div>
         <div className="overflow-x-auto border border-gray-200 rounded-md">
           <table className="min-w-full bg-white divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -166,7 +213,7 @@ function EventHistory({ apiUrl, authToken }) {
                   ID
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Tipo
+                  Tipo de Evento
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Descripción
@@ -175,7 +222,7 @@ function EventHistory({ apiUrl, authToken }) {
                   Documento ID
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Fecha
+                  Fecha y Hora
                 </th>
               </tr>
             </thead>
@@ -186,8 +233,16 @@ function EventHistory({ apiUrl, authToken }) {
                     {event.id}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="px-2.5 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-700">
-                      {event.event_type}
+                    <span className={`px-2.5 py-1 text-xs font-medium rounded-md ${
+                      event.event_type === 'user_login'
+                        ? 'bg-purple-100 text-purple-700'
+                        : event.event_type === 'document_upload'
+                        ? 'bg-blue-100 text-blue-700'
+                        : event.event_type === 'ai_analysis'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {formatEventType(event.event_type)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
@@ -204,6 +259,7 @@ function EventHistory({ apiUrl, authToken }) {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   )

@@ -15,6 +15,7 @@ from app.modules.documents.schemas import (
     DocumentUploadResponse,
     DocumentResponse,
     EventLogListResponse,
+    EventLogResponse,
     EventLogFilter,
 )
 from app.modules.documents.service import DocumentService
@@ -177,8 +178,8 @@ async def get_document(
 async def get_event_history(
     event_type: Optional[str] = Query(None, description="Filtrar por tipo de evento"),
     description: Optional[str] = Query(None, description="Buscar en descripción"),
-    start_date: Optional[datetime] = Query(None, description="Fecha de inicio"),
-    end_date: Optional[datetime] = Query(None, description="Fecha de fin"),
+    start_date: Optional[str] = Query(None, description="Fecha de inicio (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Fecha de fin (YYYY-MM-DD)"),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     current_user: TokenData = Depends(get_current_user),
@@ -190,8 +191,8 @@ async def get_event_history(
     Args:
         event_type: Filtrar por tipo de evento
         description: Buscar en descripción
-        start_date: Fecha de inicio del rango
-        end_date: Fecha de fin del rango
+        start_date: Fecha de inicio del rango (YYYY-MM-DD)
+        end_date: Fecha de fin del rango (YYYY-MM-DD)
         limit: Límite de resultados
         offset: Offset para paginación
         current_user: Usuario autenticado
@@ -200,12 +201,30 @@ async def get_event_history(
     Returns:
         Lista de eventos filtrados
     """
+    # Parsear fechas desde string
+    parsed_start_date = None
+    parsed_end_date = None
+    
+    if start_date:
+        try:
+            parsed_start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            raise ValidationError(f"Formato de fecha inválido para start_date: {start_date}. Use YYYY-MM-DD")
+    
+    if end_date:
+        try:
+            parsed_end_date = datetime.strptime(end_date, "%Y-%m-%d")
+            # Agregar 23:59:59 para incluir todo el día
+            parsed_end_date = parsed_end_date.replace(hour=23, minute=59, second=59)
+        except ValueError:
+            raise ValidationError(f"Formato de fecha inválido para end_date: {end_date}. Use YYYY-MM-DD")
+    
     event_repository = EventLogRepository(db)
     events = event_repository.get_events(
         event_type=event_type,
         description_filter=description,
-        start_date=start_date,
-        end_date=end_date,
+        start_date=parsed_start_date,
+        end_date=parsed_end_date,
         user_id=current_user.id_usuario,
         limit=limit,
         offset=offset,
@@ -215,8 +234,8 @@ async def get_event_history(
     total_events = event_repository.get_events(
         event_type=event_type,
         description_filter=description,
-        start_date=start_date,
-        end_date=end_date,
+        start_date=parsed_start_date,
+        end_date=parsed_end_date,
         user_id=current_user.id_usuario,
         limit=10000,  # Para contar total
         offset=0,
@@ -245,8 +264,8 @@ async def get_event_history(
 async def export_events_to_excel(
     event_type: Optional[str] = Query(None),
     description: Optional[str] = Query(None),
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
+    start_date: Optional[str] = Query(None, description="Fecha de inicio (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Fecha de fin (YYYY-MM-DD)"),
     current_user: TokenData = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -256,8 +275,8 @@ async def export_events_to_excel(
     Args:
         event_type: Filtrar por tipo de evento
         description: Buscar en descripción
-        start_date: Fecha de inicio
-        end_date: Fecha de fin
+        start_date: Fecha de inicio (YYYY-MM-DD)
+        end_date: Fecha de fin (YYYY-MM-DD)
         current_user: Usuario autenticado
         db: Sesión de base de datos
         
@@ -267,12 +286,30 @@ async def export_events_to_excel(
     if openpyxl is None:
         raise ValidationError("openpyxl no está instalado. Instálalo con: pip install openpyxl")
     
+    # Parsear fechas desde string
+    parsed_start_date = None
+    parsed_end_date = None
+    
+    if start_date:
+        try:
+            parsed_start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            raise ValidationError(f"Formato de fecha inválido para start_date: {start_date}. Use YYYY-MM-DD")
+    
+    if end_date:
+        try:
+            parsed_end_date = datetime.strptime(end_date, "%Y-%m-%d")
+            # Agregar 23:59:59 para incluir todo el día
+            parsed_end_date = parsed_end_date.replace(hour=23, minute=59, second=59)
+        except ValueError:
+            raise ValidationError(f"Formato de fecha inválido para end_date: {end_date}. Use YYYY-MM-DD")
+    
     event_repository = EventLogRepository(db)
     events = event_repository.get_events(
         event_type=event_type,
         description_filter=description,
-        start_date=start_date,
-        end_date=end_date,
+        start_date=parsed_start_date,
+        end_date=parsed_end_date,
         user_id=current_user.id_usuario,
         limit=10000,  # Límite alto para exportación
         offset=0,
