@@ -3,7 +3,7 @@ Tests para los endpoints de autenticación.
 """
 import pytest
 from fastapi import status
-from app.repositories.user_repository import UserRepository
+from app.modules.auth.repository import UserRepository
 
 
 class TestLogin:
@@ -131,7 +131,7 @@ class TestTokenContent:
         )
         
         assert decoded["id_usuario"] == test_user.id
-        assert decoded["rol"] == test_user.role.value
+        assert decoded["rol"] == test_user.role  # role es ahora un string directamente
         assert "exp" in decoded
     
     def test_token_different_roles(self, client, test_admin_user, test_uploader_user):

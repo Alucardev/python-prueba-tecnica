@@ -13,7 +13,7 @@ class TestFileUpload:
     def test_upload_file_success(self, client, uploader_token, sample_csv_content):
         """Test de carga de archivo exitosa."""
         # Mockear S3Service para evitar llamadas reales a AWS
-        with patch('app.services.s3_service.S3Service.upload_file') as mock_s3:
+        with patch("app.shared.s3_service.S3Service.upload_file") as mock_s3:
             mock_s3.return_value = (
                 "uploads/2024/01/01/test-uuid.csv",
                 "https://bucket.s3.region.amazonaws.com/uploads/2024/01/01/test-uuid.csv"
@@ -85,7 +85,7 @@ class TestFileUpload:
     
     def test_upload_file_admin_role(self, client, admin_token, sample_csv_content):
         """Test de que admin puede subir archivos."""
-        with patch('app.services.s3_service.S3Service.upload_file') as mock_s3:
+        with patch("app.shared.s3_service.S3Service.upload_file") as mock_s3:
             mock_s3.return_value = (
                 "uploads/2024/01/01/test-uuid.csv",
                 "https://bucket.s3.region.amazonaws.com/uploads/2024/01/01/test-uuid.csv"
@@ -103,7 +103,7 @@ class TestFileUpload:
     
     def test_upload_file_with_categoria_and_descripcion(self, client, uploader_token, sample_csv_content):
         """Test de carga con categoria y descripcion."""
-        with patch('app.services.s3_service.S3Service.upload_file') as mock_s3:
+        with patch("app.shared.s3_service.S3Service.upload_file") as mock_s3:
             mock_s3.return_value = (
                 "uploads/2024/01/01/test-uuid.csv",
                 "https://bucket.s3.region.amazonaws.com/uploads/2024/01/01/test-uuid.csv"
@@ -129,7 +129,7 @@ class TestFileUpload:
     
     def test_upload_file_empty_csv(self, client, uploader_token):
         """Test de carga con CSV vacío."""
-        with patch('app.services.s3_service.S3Service.upload_file') as mock_s3:
+        with patch("app.shared.s3_service.S3Service.upload_file") as mock_s3:
             mock_s3.return_value = (
                 "uploads/2024/01/01/test-uuid.csv",
                 "https://bucket.s3.region.amazonaws.com/uploads/2024/01/01/test-uuid.csv"

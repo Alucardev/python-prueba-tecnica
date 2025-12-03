@@ -2,11 +2,15 @@
 Aplicación principal FastAPI.
 Punto de entrada de la aplicación y configuración de la API.
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+
 from app.database import init_db
-from app.routers import auth, files
 from app.middleware.error_handler import error_handler_middleware
+from app.modules.auth.router import router as auth_router
+from app.modules.csv.router import router as csv_router
 
 # Crear la aplicación FastAPI
 app = FastAPI(
@@ -17,6 +21,33 @@ app = FastAPI(
 
 # Registrar middleware de manejo de errores (debe ir antes de otros middlewares)
 app.middleware("http")(error_handler_middleware)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Manejador global para errores de validación de Pydantic.
+    Devuelve el mismo formato esperado por los tests.
+    """
+    errors = []
+    for error in exc.errors():
+        errors.append(
+            {
+                "field": ".".join(str(loc) for loc in error.get("loc", [])),
+                "message": error.get("msg", ""),
+                "type": error.get("type", ""),
+            }
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "error": True,
+            "message": "Error de validación en los datos enviados",
+            "type": "ValidationError",
+            "details": errors,
+        },
+    )
 
 # Configurar CORS (permitir solicitudes desde cualquier origen)
 app.add_middleware(
@@ -37,9 +68,9 @@ async def startup_event():
     init_db()
 
 
-# Incluir los routers
-app.include_router(auth.router)
-app.include_router(files.router)
+# Incluir los routers de los módulos
+app.include_router(auth_router)
+app.include_router(csv_router)
 
 
 @app.get("/", tags=["Raíz"])

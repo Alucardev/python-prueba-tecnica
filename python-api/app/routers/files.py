@@ -4,16 +4,17 @@ Define los endpoints relacionados con la carga y validación de archivos CSV.
 """
 from fastapi import APIRouter, Depends, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app.repositories.file_repository import FileRepository
-from app.services.file_service import FileService
-from app.services.s3_service import S3Service
-from app.schemas.file import FileUploadResponse
-from app.middleware.auth import get_current_user, require_role
-from app.schemas.auth import TokenData
-from app.config import settings
-from app.exceptions.custom_exceptions import ValidationError, ExternalServiceError
 from typing import Optional
+
+from app.config import settings
+from app.database import get_db
+from app.exceptions.custom_exceptions import ValidationError
+from app.middleware.auth import require_role
+from app.modules.csv.repository import FileRepository
+from app.modules.csv.schemas import FileUploadResponse
+from app.modules.csv.service import FileService
+from app.schemas.auth import TokenData
+from app.shared.s3_service import S3Service
 
 router = APIRouter(prefix="/files", tags=["Archivos"])
 
@@ -70,6 +71,9 @@ async def upload_file(
         categoria=categoria,
         descripcion=descripcion
     )
+    
+    # Asegurar que todos los cambios se persistan
+    db.commit()
     
     # Retornar respuesta
     return FileUploadResponse(

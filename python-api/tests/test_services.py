@@ -2,13 +2,14 @@
 Tests para los servicios de la aplicación.
 """
 import pytest
-from app.services.auth_service import AuthService
-from app.services.file_service import FileService
-from app.services.s3_service import S3Service
-from app.repositories.user_repository import UserRepository
-from app.repositories.file_repository import FileRepository
-from app.exceptions.custom_exceptions import AuthenticationError, ExternalServiceError
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
+
+from app.exceptions.custom_exceptions import ExternalServiceError
+from app.modules.auth.repository import UserRepository
+from app.modules.auth.service import AuthService
+from app.modules.csv.repository import FileRepository
+from app.modules.csv.service import FileService
+from app.shared.s3_service import S3Service
 
 
 class TestAuthService:
@@ -64,7 +65,7 @@ class TestAuthService:
         )
         
         assert decoded["id_usuario"] == test_user.id
-        assert decoded["rol"] == test_user.role.value
+        assert decoded["rol"] == test_user.role
     
     def test_verify_token_valid(self, db_session, test_user):
         """Test de verificación de token válido."""
@@ -76,7 +77,7 @@ class TestAuthService:
         
         assert token_data is not None
         assert token_data.id_usuario == test_user.id
-        assert token_data.rol == test_user.role.value
+        assert token_data.rol == test_user.role
     
     def test_verify_token_invalid(self, db_session):
         """Test de verificación de token inválido."""
@@ -116,7 +117,7 @@ class TestAuthService:
 class TestFileService:
     """Tests para el servicio de archivos."""
     
-    @patch('app.services.s3_service.S3Service.upload_file')
+    @patch("app.shared.s3_service.S3Service.upload_file")
     def test_upload_and_process_csv_success(self, mock_s3_upload, db_session, test_user):
         """Test de procesamiento de CSV exitoso."""
         mock_s3_upload.return_value = (
@@ -147,7 +148,7 @@ class TestFileService:
         assert result["records_count"] == 2
         assert "validations" in result
     
-    @patch('app.services.s3_service.S3Service.upload_file')
+    @patch("app.shared.s3_service.S3Service.upload_file")
     def test_upload_and_process_csv_s3_error(self, mock_s3_upload, db_session, test_user):
         """Test de error al subir a S3."""
         mock_s3_upload.side_effect = Exception("S3 Error")

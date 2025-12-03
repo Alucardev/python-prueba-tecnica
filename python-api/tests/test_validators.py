@@ -2,7 +2,7 @@
 Tests para los validadores de CSV.
 """
 import pytest
-from app.utils.validators import CSVValidator
+from app.shared.validators import CSVValidator
 
 
 class TestCSVValidator:

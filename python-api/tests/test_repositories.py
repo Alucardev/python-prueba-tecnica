@@ -2,8 +2,8 @@
 Tests para los repositorios de la aplicación.
 """
 import pytest
-from app.repositories.user_repository import UserRepository
-from app.repositories.file_repository import FileRepository
+from app.modules.auth.repository import UserRepository
+from app.modules.csv.repository import FileRepository
 
 
 class TestUserRepository:

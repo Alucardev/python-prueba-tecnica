@@ -4,14 +4,14 @@ Maneja la validación de tokens JWT y control de acceso por roles.
 """
 from fastapi import Security, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.services.auth_service import AuthService
-from app.repositories.user_repository import UserRepository
-from app.schemas.auth import TokenData
-from app.config import settings
+from sqlalchemy.orm import Session
+from typing import List
+
 from app.database import get_db
 from app.exceptions.custom_exceptions import AuthenticationError, AuthorizationError
-from sqlalchemy.orm import Session
-from typing import List, Optional
+from app.modules.auth.repository import UserRepository
+from app.modules.auth.schemas import TokenData
+from app.modules.auth.service import AuthService
 
 
 # Esquema de seguridad HTTP Bearer
@@ -70,7 +70,11 @@ def require_role(allowed_roles: List[str]):
         Raises:
             HTTPException: Si el usuario no tiene el rol requerido
         """
-        if current_user.rol not in allowed_roles:
+        # Normalizar rol a minúsculas para comparación
+        user_role = current_user.rol.lower() if current_user.rol else ""
+        allowed_roles_lower = [role.lower() for role in allowed_roles]
+        
+        if user_role not in allowed_roles_lower:
             raise AuthorizationError(
                 f"Acceso denegado. Se requiere uno de los siguientes roles: {', '.join(allowed_roles)}"
             )

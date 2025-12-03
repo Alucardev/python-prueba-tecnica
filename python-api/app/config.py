@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     # Configuración SQL Server
     SQL_SERVER_HOST: str = os.getenv("SQL_SERVER_HOST", "localhost")
     SQL_SERVER_PORT: int = int(os.getenv("SQL_SERVER_PORT", "1433"))
-    SQL_SERVER_DATABASE: str = os.getenv("SQL_SERVER_DATABASE", "master")
+    SQL_SERVER_DATABASE: str = os.getenv("SQL_SERVER_DATABASE", "prueba_tecnica")
     SQL_SERVER_USER: str = os.getenv("SQL_SERVER_USER", "sa")
     SQL_SERVER_PASSWORD: str = os.getenv("SQL_SERVER_PASSWORD", "")
     SQL_SERVER_DRIVER: str = os.getenv("SQL_SERVER_DRIVER", "ODBC Driver 17 for SQL Server")

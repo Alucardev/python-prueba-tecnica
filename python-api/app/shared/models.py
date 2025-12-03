@@ -1,9 +1,11 @@
 """
-Base compartida para todos los modelos.
-Todos los modelos deben usar esta Base para que SQLAlchemy pueda manejar las relaciones.
+Modelos y base ORM compartidos entre módulos.
 """
 from sqlalchemy.ext.declarative import declarative_base
 
 # Base compartida para todos los modelos
 Base = declarative_base()
+
+__all__ = ["Base"]
+
 

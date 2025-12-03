@@ -33,7 +33,7 @@ class TestAuthMiddleware:
         assert response.status_code == 200
         data = response.json()
         assert data["user_id"] == test_user.id
-        assert data["rol"] == test_user.role.value
+        assert data["rol"] == test_user.role  # role es ahora un string directamente
         
         app.dependency_overrides.clear()
     

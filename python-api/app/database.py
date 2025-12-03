@@ -5,7 +5,7 @@ Maneja la conexión y sesiones de SQLAlchemy.
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from app.config import settings
-from app.models.base import Base
+from app.shared.models import Base
 
 # Crear el motor de base de datos
 engine = create_engine(
@@ -24,7 +24,8 @@ def init_db():
     Crea todas las tablas definidas en los modelos.
     """
     # Importar todos los modelos para que SQLAlchemy los registre
-    from app.models import user, file, role
+    from app.modules.auth import models as auth_models  # noqa: F401
+    from app.modules.csv import models as csv_models  # noqa: F401
     
     # Crear todas las tablas usando la Base compartida
     Base.metadata.create_all(bind=engine)
@@ -37,7 +38,7 @@ def _create_initial_roles():
     """
     Crea los roles iniciales en la base de datos si no existen.
     """
-    from app.repositories.role_repository import RoleRepository
+    from app.modules.auth.repository import RoleRepository
     from app.database import SessionLocal
     
     db = SessionLocal()
