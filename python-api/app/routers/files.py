@@ -57,6 +57,16 @@ async def upload_file(
     # Leer el contenido del archivo
     file_content = await file.read()
     
+    # Validar tamaño de archivo (máximo 50MB para CSV)
+    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+    if len(file_content) > MAX_FILE_SIZE:
+        raise ValidationError(
+            f"El archivo es demasiado grande. Tamaño máximo permitido: 50MB"
+        )
+    
+    if len(file_content) == 0:
+        raise ValidationError("El archivo está vacío")
+    
     # Crear servicios
     s3_service = S3Service()
     file_repository = FileRepository(db)
@@ -64,6 +74,7 @@ async def upload_file(
     
     # Procesar el archivo con categoria y descripcion
     # Las excepciones serán capturadas por el middleware de errores
+    # El commit se maneja automáticamente por get_db() si no hay errores
     result = file_service.upload_and_process_csv(
         file_content=file_content,
         filename=file.filename,
@@ -71,9 +82,6 @@ async def upload_file(
         categoria=categoria,
         descripcion=descripcion
     )
-    
-    # Asegurar que todos los cambios se persistan
-    db.commit()
     
     # Retornar respuesta
     return FileUploadResponse(

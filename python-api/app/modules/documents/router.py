@@ -62,6 +62,16 @@ async def upload_document(
     # Leer el contenido del archivo
     file_content = await file.read()
     
+    # Validar tamaño de archivo (máximo 10MB)
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    if len(file_content) > MAX_FILE_SIZE:
+        raise ValidationError(
+            f"El archivo es demasiado grande. Tamaño máximo permitido: 10MB"
+        )
+    
+    if len(file_content) == 0:
+        raise ValidationError("El archivo está vacío")
+    
     # Crear servicios
     s3_service = S3Service()
     textract_service = TextractService()
@@ -75,14 +85,12 @@ async def upload_document(
     )
     
     # Procesar el documento
+    # El commit se maneja automáticamente por get_db() si no hay errores
     result = document_service.upload_and_analyze_document(
         file_content=file_content,
         filename=file.filename,
         user_id=current_user.id_usuario,
     )
-    
-    # Asegurar que todos los cambios se persistan
-    db.commit()
     
     return DocumentUploadResponse(**result)
 

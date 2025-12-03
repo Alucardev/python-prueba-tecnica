@@ -126,12 +126,22 @@ class DocumentService:
                 metadata={"classification": classification},
             )
 
+        except ExternalServiceError:
+            # Re-lanzar errores de servicios externos sin modificar
+            raise
         except Exception as e:
-            # Actualizar estado a error
-            self.document_repository.update_document_analysis(
-                document_id=document.id,
-                status=DocumentStatus.ERROR.value,
-            )
+            # Actualizar estado a error antes de lanzar excepción
+            try:
+                self.document_repository.update_document_analysis(
+                    document_id=document.id,
+                    status=DocumentStatus.ERROR.value,
+                )
+            except Exception as update_error:
+                # Si falla la actualización, loguear pero continuar con el error original
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error al actualizar estado del documento: {str(update_error)}")
+            
             raise ExternalServiceError(
                 f"Error al analizar documento: {str(e)}", service="AWS Textract"
             )

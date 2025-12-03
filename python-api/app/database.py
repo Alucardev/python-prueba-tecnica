@@ -68,6 +68,7 @@ def get_db() -> Session:
     """
     Generador de sesiones de base de datos.
     Proporciona una sesión de base de datos y la cierra automáticamente.
+    Hace rollback automático si hay una excepción no manejada.
     
     Yields:
         Sesión de base de datos
@@ -75,6 +76,10 @@ def get_db() -> Session:
     db = SessionLocal()
     try:
         yield db
+        db.commit()  # Commit solo si no hay excepciones
+    except Exception:
+        db.rollback()  # Rollback en caso de error
+        raise
     finally:
         db.close()
 
